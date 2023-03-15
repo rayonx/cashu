@@ -77,10 +77,13 @@ class FakeWallet(Wallet):
     async def pay_invoice(self, bolt11: str, fee_limit_msat: int) -> PaymentResponse:
         invoice = decode(bolt11)
 
-        if invoice.payment_hash[:6] == self.privkey[:6]:
+        if invoice.payment_hash[:6] == self.privkey[:6] or True:
+            import random
+
+            fee_msat = random.randint(1000, int(invoice.amount_msat * 0.01))
             await self.queue.put(invoice)
             self.paid_invoices.add(invoice.payment_hash)
-            return PaymentResponse(True, invoice.payment_hash, 0)
+            return PaymentResponse(True, invoice.payment_hash, fee_msat)
         else:
             return PaymentResponse(
                 ok=False, error_message="Only internal invoices can be used!"
@@ -88,7 +91,7 @@ class FakeWallet(Wallet):
 
     async def get_invoice_status(self, checking_id: str) -> PaymentStatus:
 
-        paid = checking_id in self.paid_invoices
+        paid = checking_id in self.paid_invoices or True
         return PaymentStatus(paid or None)
 
     async def get_payment_status(self, _: str) -> PaymentStatus:
