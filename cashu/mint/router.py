@@ -20,6 +20,8 @@ from cashu.core.base import (
     PostMintResponse,
     PostSplitRequest,
     PostSplitResponse,
+    ReservesPromisesResponse,
+    ReservesProofsResponse,
 )
 from cashu.core.errors import CashuError
 from cashu.core.settings import settings
@@ -195,3 +197,37 @@ async def split(
     frst_promises, scnd_promises = split_return
     resp = PostSplitResponse(fst=frst_promises, snd=scnd_promises)
     return resp
+
+
+@router.get(
+    "/reserves/promises/{idBase64Urlsafe}",
+    name="Issued blind signatures",
+    summary="Returns a list of all issued blind signatures",
+)
+async def reserves_promises(idBase64Urlsafe: str) -> ReservesPromisesResponse:
+    """Returns a list of all issued promises for a given keyset id."""
+    id = idBase64Urlsafe.replace("-", "+").replace("_", "/")
+    promises = await ledger._get_promises_for_keyset(id)
+    response = ReservesPromisesResponse(
+        promises=await ledger._get_promises_for_keyset(id),
+        id=id,
+        sum_amounts=sum([p.amount for p in promises]),
+    )
+    return response
+
+
+@router.get(
+    "/reserves/proofs/{idBase64Urlsafe}",
+    name="Redeemed proofs",
+    summary="Returns a list of all redeemed proofs",
+)
+async def reserves_proofs(idBase64Urlsafe: str) -> ReservesProofsResponse:
+    """Returns a list of all issued promises for a given keyset id."""
+    id = idBase64Urlsafe.replace("-", "+").replace("_", "/")
+    proofs = await ledger._get_proofs_for_keyset(id)
+    response = ReservesProofsResponse(
+        proofs=await ledger._get_proofs_for_keyset(id),
+        id=id,
+        sum_amounts=sum([p.amount for p in proofs]),
+    )
+    return response

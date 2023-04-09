@@ -13,6 +13,8 @@ from cashu.core.base import (
     MintKeyset,
     MintKeysets,
     Proof,
+    PromiseDb,
+    ProofDb,
 )
 from cashu.core.crypto import derive_pubkey
 from cashu.core.db import Database
@@ -45,7 +47,7 @@ class Ledger:
 
     async def load_used_proofs(self):
         """Load all used proofs from database."""
-        proofs_used = await self.crud.get_proofs_used(db=self.db)
+        proofs_used = await self.crud.get_secrets_used(db=self.db)
         self.proofs_used = set(proofs_used)
 
     async def load_keyset(self, derivation_path, autosave=True):
@@ -131,9 +133,35 @@ class Ledger:
         private_key_amount = keyset.private_keys[amount]
         C_ = b_dhke.step2_bob(B_, private_key_amount)
         await self.crud.store_promise(
-            amount=amount, B_=B_.serialize().hex(), C_=C_.serialize().hex(), db=self.db
+            amount=amount,
+            B_=B_.serialize().hex(),
+            C_=C_.serialize().hex(),
+            id=keyset.id,
+            db=self.db,
         )
         return BlindedSignature(id=keyset.id, amount=amount, C_=C_.serialize().hex())
+
+    async def _get_promises_for_keyset(self, id: str) -> List[PromiseDb]:
+        """Returns all promises for a given keyset id.
+
+        Args:
+            id (str): Keyset id
+
+        Returns:
+            List[PromisesProof]: _description_
+        """
+        return await self.crud.get_promises_for_keyset(id=id, db=self.db)
+
+    async def _get_proofs_for_keyset(self, id: str) -> List[ProofDb]:
+        """Returns all proofs for a given keyset id.
+
+        Args:
+            id (str): Keyset id
+
+        Returns:
+            List[Proof]: _description_
+        """
+        return await self.crud.get_proofs_used(id=id, db=self.db)
 
     def _check_spendable(self, proof: Proof):
         """Checks whether the proof was already spent."""

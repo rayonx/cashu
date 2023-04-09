@@ -1,7 +1,7 @@
 import time
 from typing import Any, List, Optional
 
-from cashu.core.base import Invoice, MintKeyset, Proof
+from cashu.core.base import Invoice, MintKeyset, Proof, PromiseDb, ProofDb
 from cashu.core.db import Connection, Database
 from cashu.core.migrations import table_with_schema
 
@@ -21,6 +21,10 @@ class LedgerCrud:
 
         return await get_lightning_invoice(*args, **kwags)
 
+    async def get_secrets_used(*args, **kwags):
+
+        return await get_secrets_used(*args, **kwags)
+
     async def get_proofs_used(*args, **kwags):
 
         return await get_proofs_used(*args, **kwags)
@@ -32,6 +36,10 @@ class LedgerCrud:
     async def get_proofs_pending(*args, **kwags):
 
         return await get_proofs_pending(*args, **kwags)
+
+    async def get_promises_for_keyset(*args, **kwags):
+
+        return await get_promises_for_keyset(*args, **kwags)
 
     async def set_proof_pending(*args, **kwags):
 
@@ -63,24 +71,42 @@ async def store_promise(
     amount: int,
     B_: str,
     C_: str,
+    id: str,
     conn: Optional[Connection] = None,
 ):
 
     await (conn or db).execute(
         f"""
         INSERT INTO {table_with_schema(db, 'promises')}
-          (amount, B_b, C_b)
-        VALUES (?, ?, ?)
+          (amount, B_, C_, id)
+        VALUES (?, ?, ?, ?)
         """,
         (
             amount,
             str(B_),
             str(C_),
+            id,
         ),
     )
 
 
-async def get_proofs_used(
+async def get_promises_for_keyset(
+    db: Database,
+    id: str,
+    conn: Optional[Connection] = None,
+):
+
+    rows = await (conn or db).fetchall(
+        f"""
+        SELECT * from {table_with_schema(db, 'promises')}
+        WHERE id = ?
+        """,
+        (id,),
+    )
+    return [PromiseDb(**row) for row in rows]
+
+
+async def get_secrets_used(
     db: Database,
     conn: Optional[Connection] = None,
 ):
@@ -90,7 +116,25 @@ async def get_proofs_used(
         SELECT secret from {table_with_schema(db, 'proofs_used')}
         """
     )
+
     return [row[0] for row in rows]
+
+
+async def get_proofs_used(
+    db: Database,
+    id: str,
+    conn: Optional[Connection] = None,
+):
+
+    rows = await (conn or db).fetchall(
+        f"""
+        SELECT * from {table_with_schema(db, 'proofs_used')}
+        WHERE id = ?
+        """,
+        (id,),
+    )
+
+    return [ProofDb(**row) for row in rows]
 
 
 async def invalidate_proof(
@@ -103,13 +147,14 @@ async def invalidate_proof(
     await (conn or db).execute(
         f"""
         INSERT INTO {table_with_schema(db, 'proofs_used')}
-          (amount, C, secret)
-        VALUES (?, ?, ?)
+          (amount, C, secret, id)
+        VALUES (?, ?, ?, ?)
         """,
         (
             proof.amount,
             str(proof.C),
             str(proof.secret),
+            str(proof.id),
         ),
     )
 

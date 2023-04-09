@@ -146,3 +146,24 @@ async def m005_pending_proofs_table(db: Database) -> None:
             );
         """
     )
+
+
+async def m006_promises_proofs_add_keyset_id(db: Database):
+    """
+    Adds keyset_id to promises and proofs tables.
+    """
+    await db.execute(
+        f"ALTER TABLE {table_with_schema(db, 'promises')} RENAME COLUMN B_b TO B_"
+    )
+    await db.execute(
+        f"ALTER TABLE {table_with_schema(db, 'promises')} RENAME COLUMN C_b TO C_"
+    )
+    await db.execute(
+        f"ALTER TABLE {table_with_schema(db, 'promises')} ADD COLUMN id TEXT"
+    )
+    await db.execute(
+        f"ALTER TABLE {table_with_schema(db, 'proofs_used')} ADD COLUMN id TEXT"
+    )
+    await db.execute(
+        f"ALTER TABLE {table_with_schema(db, 'proofs_pending')} ADD COLUMN id TEXT"
+    )

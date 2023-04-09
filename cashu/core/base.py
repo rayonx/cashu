@@ -3,7 +3,7 @@ import json
 from sqlite3 import Row
 from typing import Any, Dict, List, Optional, TypedDict, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from cashu.core.crypto import derive_keys, derive_keyset_id, derive_pubkeys
 from cashu.core.secp import PrivateKey, PublicKey
@@ -194,6 +194,34 @@ class CheckFeesRequest(BaseModel):
 
 class CheckFeesResponse(BaseModel):
     fee: Union[int, None]
+
+
+# ------- API: /RESERVES/PROMISES -------
+
+
+class PromiseDb(BaseModel):
+    amount: int
+    C_: str
+
+
+class ReservesPromisesResponse(BaseModel):
+    promises: List[PromiseDb]
+    id: str
+    sum_amounts: int
+
+
+# ------- API: /RESERVES/PROOFS -------
+
+
+class ProofDb(BaseModel):
+    amount: int
+    secret: str
+
+
+class ReservesProofsResponse(BaseModel):
+    proofs: List[ProofDb]
+    id: str
+    sum_amounts: int
 
 
 # ------- KEYSETS -------
