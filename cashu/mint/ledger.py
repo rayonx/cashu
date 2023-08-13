@@ -1005,7 +1005,6 @@ class Ledger:
         if settings.lightning:
             decoded_invoice = decode(pr)
             assert decoded_invoice.amount_msat, "invoice has no amount"
-            assert decoded_invoice.payment_hash, "invoice has no payment hash"
             amount = math.ceil(decoded_invoice.amount_msat / 1000)
             logger.trace(
                 f"check_fees: checking lightning invoice: {decoded_invoice.payment_hash}"
